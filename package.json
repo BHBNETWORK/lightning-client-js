@@ -1,0 +1,35 @@
+{
+  "name": "lightning-client",
+  "version": "0.5.2-beta.1",
+  "description": "JavaScript c-lightning client",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BHBNETWORK/lightning-client-js.git"
+  },
+  "keywords": [
+    "lightning",
+    "network",
+    "bitcoin"
+  ],
+  "author": "Alekos Filini",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/BHBNETWORK/lightning-client-js/issues"
+  },
+  "homepage": "https://github.com/BHBNETWORK/lightning-client-js#readme",
+  "xo": {
+    "esnext": true,
+    "space": false,
+    "rules": {},
+    "envs": [
+      "node"
+    ]
+  },
+  "dependencies": {
+    "lodash": "^4.17.4"
+  }
+}
