@@ -23,7 +23,7 @@
   "homepage": "https://github.com/BHBNETWORK/lightning-client-js#readme",
   "xo": {
     "esnext": true,
-    "space": false,
+    "space": 4,
     "rules": {},
     "envs": [
       "node"
