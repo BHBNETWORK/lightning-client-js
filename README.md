@@ -1,3 +1,3 @@
 # lightning-client-js
 
-JavaScript [c-lightning](https://github.com/ElementsProject/lightning).
+JavaScript [c-lightning](https://github.com/ElementsProject/lightning) client.
