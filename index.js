@@ -3,6 +3,7 @@
 const path = require('path');
 const net = require('net');
 const _ = require('lodash');
+const methods = require('./methods');
 
 class LightningClient {
     constructor(rpcPath) {
@@ -148,110 +149,14 @@ class LightningClient {
                 });
             });
     }
-
-    devBlockheight() {
-        return this.call('dev-blockheight');
-    }
-
-    getnodes() {
-        return this.call('getnodes');
-    }
-
-    getroute(id, msatoshi, riskfactor) {
-        return this.call('getroute', [id, msatoshi, riskfactor]);
-    }
-
-    getchannels() {
-        return this.call('getchannels');
-    }
-
-    invoice(msatoshi, label, r = null) {
-        return this.call('invoice', [msatoshi, label, r]);
-    }
-
-    listinvoice(label = null) {
-        return this.call('listinvoice', [label]);
-    }
-
-    delinvoice(label = null) {
-        return this.call('delinvoice', [label]);
-    }
-
-    waitanyinvoice(label = null) {
-        return this.call('waitanyinvoice', [label]);
-    }
-
-    waitinvoice(label) {
-        return this.call('waitinvoice', [label]);
-    }
-
-    help() {
-        return this.call('help');
-    }
-
-    stop() {
-        return this.call('stop');
-    }
-
-    getlog(level = null) {
-        return this.call('getlog', [level]);
-    }
-
-    devRhash(secret) {
-        return this.call('dev-rhash', [secret]);
-    }
-
-    devCrash() {
-        return this.call('dev-crash');
-    }
-
-    getinfo() {
-        return this.call('getinfo');
-    }
-
-    sendpay(route, rhash) {
-        return this.call('sendpay', [route, rhash]);
-    }
-
-    connect(host, port, id) {
-        return this.call('connect', [host, port, id]);
-    }
-
-    devFail(id) {
-        return this.call('dev-fail', [id]);
-    }
-
-    getpeers(level = null) {
-        return this.call('getpeers', [level]);
-    }
-
-    fundchannel(id, satoshis) {
-        return this.call('fundchannel', [id, satoshis]);
-    }
-
-    close(id) {
-        return this.call('close', [id]);
-    }
-
-    devPing(peerid, len, pongbytes) {
-        return this.call('dev-ping', [peerid, len, pongbytes]);
-    }
-
-    withdraw(destination, satoshi) {
-        return this.call('withdraw', [satoshi, destination]);
-    }
-
-    newaddr() {
-        return this.call('newaddr');
-    }
-
-    addfunds(tx) {
-        return this.call('addfunds', [tx]);
-    }
-
-    listfunds() {
-        return this.call('listfunds');
-    }
 }
+
+const protify = s => s.replace(/-([a-z])/g, m => m[1].toUpperCase());
+
+methods.forEach(k => {
+    LightningClient.prototype[protify(k)] = function (...args) {
+        return this.call(k, args);
+    };
+});
 
 module.exports = LightningClient;
