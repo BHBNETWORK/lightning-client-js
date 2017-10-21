@@ -2,6 +2,7 @@
 
 const path = require('path');
 const net = require('net');
+const readline = require('readline');
 const {EventEmitter} = require('events');
 const _ = require('lodash');
 const methods = require('./methods');
@@ -45,48 +46,16 @@ class LightningClient extends EventEmitter {
             });
         });
 
-        this.client.on('data', data => {
-            _.each(LightningClient.splitJSON(data.toString()), str => {
-                let dataObject = {};
-                try {
-                    dataObject = JSON.parse(str);
-                } catch (err) {
-                    return;
-                }
+        readline.createInterface({input: this.client}).on('line', str => {
+            let data;
+            try {
+                data = JSON.parse(str);
+            } catch (err) {
+                return _self.emit('error', 'Invalid JSON: ' + str);
+            }
 
-                _self.emit('res:' + dataObject.id, dataObject);
-            });
+            _self.emit('res:' + data.id, data);
         });
-    }
-
-    static splitJSON(str) {
-        const parts = [];
-
-        let openCount = 0;
-        let lastSplit = 0;
-
-        for (let i = 0; i < str.length; i++) {
-            if (i > 0 && str.charCodeAt(i - 1) === 115) { // 115 => backslash, ignore this character
-                continue;
-            }
-
-            if (str[i] === '{') {
-                openCount++;
-            } else if (str[i] === '}') {
-                openCount--;
-
-                if (openCount === 0) {
-                    const start = lastSplit;
-                    const end = i + 1 === str.length ? undefined : i + 1;
-
-                    parts.push(str.slice(start, end));
-
-                    lastSplit = end;
-                }
-            }
-        }
-
-        return parts.length === 0 ? [str] : parts;
     }
 
     increaseWaitTime() {
