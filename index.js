@@ -2,9 +2,10 @@
 
 const path = require('path');
 const net = require('net');
+const {EventEmitter} = require('events');
 const _ = require('lodash');
 
-class LightningClient {
+class LightningClient extends EventEmitter {
     constructor(rpcPath) {
         if (!path.isAbsolute(rpcPath)) {
             throw new Error('The rpcPath must be an absolute path');
@@ -14,6 +15,7 @@ class LightningClient {
 
         console.log(`Connecting to ${rpcPath}`);
 
+        super();
         this.rpcPath = rpcPath;
         this.reconnectWait = 0.5;
         this.reconnectTimeout = null;
@@ -41,8 +43,6 @@ class LightningClient {
             });
         });
 
-        this.waitingFor = {};
-
         this.client.on('data', data => {
             _.each(LightningClient.splitJSON(data.toString()), str => {
                 let dataObject = {};
@@ -52,12 +52,7 @@ class LightningClient {
                     return;
                 }
 
-                if (!_.isFunction(_self.waitingFor[dataObject.id])) {
-                    return;
-                }
-
-                _self.waitingFor[dataObject.id].call(_self, dataObject);
-                delete _self.waitingFor[dataObject.id];
+                _self.emit('res:' + dataObject.id, dataObject);
             });
         });
     }
@@ -131,22 +126,20 @@ class LightningClient {
 
         // Wait for the client to connect
         return this.clientConnectionPromise
-            .then(() => {
+            .then(() => new Promise((resolve, reject) => {
                 // Wait for a response
-                return new Promise((resolve, reject) => {
-                    this.waitingFor[callInt] = response => {
-                        if (_.isNil(response.error)) {
-                            resolve(response.result);
-                            return;
-                        }
+                this.once('res:' + callInt, response => {
+                    if (_.isNil(response.error)) {
+                        resolve(response.result);
+                        return;
+                    }
 
-                        reject(new Error(response.error));
-                    };
-
-                    // Send the command
-                    _self.client.write(JSON.stringify(sendObj));
+                    reject(new Error(response.error));
                 });
-            });
+
+                // Send the command
+                _self.client.write(JSON.stringify(sendObj));
+            }));
     }
 
     devBlockheight() {
