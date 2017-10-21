@@ -17,6 +17,7 @@ class LightningClient {
         this.rpcPath = rpcPath;
         this.reconnectWait = 0.5;
         this.reconnectTimeout = null;
+        this.reqcount = 0;
 
         const _self = this;
 
@@ -122,7 +123,7 @@ class LightningClient {
 
         const _self = this;
 
-        const callInt = Math.round(Math.random() * 10000);
+        const callInt = ++this.reqcount;
         const sendObj = {
             method,
             params: args,
