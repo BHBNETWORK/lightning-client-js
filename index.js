@@ -3,9 +3,11 @@
 const path = require('path');
 const net = require('net');
 const debug = require('debug')('lightning-client');
+const {EventEmitter} = require('events');
 const _ = require('lodash');
+const methods = require('./methods');
 
-class LightningClient {
+class LightningClient extends EventEmitter {
     constructor(rpcPath) {
         if (!path.isAbsolute(rpcPath)) {
             throw new Error('The rpcPath must be an absolute path');
@@ -15,9 +17,11 @@ class LightningClient {
 
         debug(`Connecting to ${rpcPath}`);
 
+        super();
         this.rpcPath = rpcPath;
         this.reconnectWait = 0.5;
         this.reconnectTimeout = null;
+        this.reqcount = 0;
 
         const _self = this;
 
@@ -42,8 +46,6 @@ class LightningClient {
             });
         });
 
-        this.waitingFor = {};
-
         this.client.on('data', data => {
             _.each(LightningClient.splitJSON(data.toString()), str => {
                 let dataObject = {};
@@ -53,12 +55,7 @@ class LightningClient {
                     return;
                 }
 
-                if (!_.isFunction(_self.waitingFor[dataObject.id])) {
-                    return;
-                }
-
-                _self.waitingFor[dataObject.id].call(_self, dataObject);
-                delete _self.waitingFor[dataObject.id];
+                _self.emit('res:' + dataObject.id, dataObject);
             });
         });
     }
@@ -123,7 +120,7 @@ class LightningClient {
 
         const _self = this;
 
-        const callInt = Math.round(Math.random() * 10000);
+        const callInt = ++this.reqcount;
         const sendObj = {
             method,
             params: args,
@@ -132,127 +129,29 @@ class LightningClient {
 
         // Wait for the client to connect
         return this.clientConnectionPromise
-            .then(() => {
+            .then(() => new Promise((resolve, reject) => {
                 // Wait for a response
-                return new Promise((resolve, reject) => {
-                    this.waitingFor[callInt] = response => {
-                        if (_.isNil(response.error)) {
-                            resolve(response.result);
-                            return;
-                        }
+                this.once('res:' + callInt, response => {
+                    if (_.isNil(response.error)) {
+                        resolve(response.result);
+                        return;
+                    }
 
-                        reject(new Error(response.error));
-                    };
-
-                    // Send the command
-                    _self.client.write(JSON.stringify(sendObj));
+                    reject(new Error(response.error));
                 });
-            });
-    }
 
-    devBlockheight() {
-        return this.call('dev-blockheight');
-    }
-
-    getnodes() {
-        return this.call('getnodes');
-    }
-
-    getroute(id, msatoshi, riskfactor) {
-        return this.call('getroute', [id, msatoshi, riskfactor]);
-    }
-
-    getchannels() {
-        return this.call('getchannels');
-    }
-
-    invoice(msatoshi, label, r = null) {
-        return this.call('invoice', [msatoshi, label, r]);
-    }
-
-    listinvoice(label = null) {
-        return this.call('listinvoice', [label]);
-    }
-
-    delinvoice(label = null) {
-        return this.call('delinvoice', [label]);
-    }
-
-    waitanyinvoice(label = null) {
-        return this.call('waitanyinvoice', [label]);
-    }
-
-    waitinvoice(label) {
-        return this.call('waitinvoice', [label]);
-    }
-
-    help() {
-        return this.call('help');
-    }
-
-    stop() {
-        return this.call('stop');
-    }
-
-    getlog(level = null) {
-        return this.call('getlog', [level]);
-    }
-
-    devRhash(secret) {
-        return this.call('dev-rhash', [secret]);
-    }
-
-    devCrash() {
-        return this.call('dev-crash');
-    }
-
-    getinfo() {
-        return this.call('getinfo');
-    }
-
-    sendpay(route, rhash) {
-        return this.call('sendpay', [route, rhash]);
-    }
-
-    connect(host, port, id) {
-        return this.call('connect', [host, port, id]);
-    }
-
-    devFail(id) {
-        return this.call('dev-fail', [id]);
-    }
-
-    getpeers(level = null) {
-        return this.call('getpeers', [level]);
-    }
-
-    fundchannel(id, satoshis) {
-        return this.call('fundchannel', [id, satoshis]);
-    }
-
-    close(id) {
-        return this.call('close', [id]);
-    }
-
-    devPing(peerid, len, pongbytes) {
-        return this.call('dev-ping', [peerid, len, pongbytes]);
-    }
-
-    withdraw(destination, satoshi) {
-        return this.call('withdraw', [satoshi, destination]);
-    }
-
-    newaddr() {
-        return this.call('newaddr');
-    }
-
-    addfunds(tx) {
-        return this.call('addfunds', [tx]);
-    }
-
-    listfunds() {
-        return this.call('listfunds');
+                // Send the command
+                _self.client.write(JSON.stringify(sendObj));
+            }));
     }
 }
+
+const protify = s => s.replace(/-([a-z])/g, m => m[1].toUpperCase());
+
+methods.forEach(k => {
+    LightningClient.prototype[protify(k)] = function (...args) {
+        return this.call(k, args);
+    };
+});
 
 module.exports = LightningClient;
