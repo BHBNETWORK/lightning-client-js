@@ -2,6 +2,7 @@
 
 const path = require('path');
 const net = require('net');
+const debug = require('debug')('lightning-client');
 const {EventEmitter} = require('events');
 const _ = require('lodash');
 const methods = require('./methods');
@@ -14,7 +15,7 @@ class LightningClient extends EventEmitter {
 
         rpcPath = path.join(rpcPath, '/lightning-rpc');
 
-        console.log(`Connecting to ${rpcPath}`);
+        debug(`Connecting to ${rpcPath}`);
 
         super();
         this.rpcPath = rpcPath;
@@ -27,19 +28,19 @@ class LightningClient extends EventEmitter {
         this.client = net.createConnection(rpcPath);
         this.clientConnectionPromise = new Promise(resolve => {
             _self.client.on('connect', () => {
-                console.log(`Lightning client connected`);
+                debug(`Lightning client connected`);
                 _self.reconnectWait = 1;
                 resolve();
             });
 
             _self.client.on('end', () => {
-                console.log('Lightning client connection closed, reconnecting');
+                console.error('Lightning client connection closed, reconnecting');
                 _self.increaseWaitTime();
                 _self.reconnect();
             });
 
             _self.client.on('error', error => {
-                console.log(`Lightning client connection error`, error);
+                console.error(`Lightning client connection error`, error);
                 _self.increaseWaitTime();
                 _self.reconnect();
             });
@@ -105,7 +106,7 @@ class LightningClient extends EventEmitter {
         }
 
         this.reconnectTimeout = setTimeout(() => {
-            console.log('Trying to reconnect...');
+            debug('Trying to reconnect...');
 
             _self.client.connect(_self.rpcPath);
             _self.reconnectTimeout = null;
