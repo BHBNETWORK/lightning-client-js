@@ -16,7 +16,7 @@ npm install lightning-client
 
 Once the client is installed you can use it by loading the main class and instantiating it in this way:
 
-```
+```javascript
 const LightningClient = require('lightning-client');
 
 // This should point to your lightning-dir, by default in ~/.lightning
