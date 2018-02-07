@@ -124,7 +124,7 @@ class LightningClient extends EventEmitter {
         const sendObj = {
             method,
             params: args,
-            id: callInt
+            id: callInt.toString()
         };
 
         // Wait for the client to connect
