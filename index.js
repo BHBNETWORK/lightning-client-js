@@ -137,7 +137,7 @@ class LightningClient extends EventEmitter {
                         return;
                     }
 
-                    reject(new Error(response.error));
+                    reject(new Error(JSON.stringify(response.error)));
                 });
 
                 // Send the command
