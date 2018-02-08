@@ -54,7 +54,7 @@ class LightningClient extends EventEmitter {
         this.client.on('data', data => {
             _.each(LightningClient.splitJSON(Buffer.concat([buffer, data]), buffer.length, openCount), partObj => {
                 if (partObj.partial) {
-                    buffer = Buffer.concat([buffer, partObj.string]);
+                    buffer = partObj.string;
                     openCount = partObj.openCount;
 
                     return;
