@@ -48,29 +48,27 @@ class LightningClient extends EventEmitter {
             });
         });
 
-        let buffer = '';
+        let buffer = Buffer.from('');
         let openCount = 0;
 
         this.client.on('data', data => {
-            _.each(LightningClient.splitJSON(buffer + data.toString(), buffer.length, openCount), partObj => {
+            _.each(LightningClient.splitJSON(Buffer.concat([buffer, data]), buffer.length, openCount), partObj => {
                 if (partObj.partial) {
-                    buffer += partObj.string;
+                    buffer = Buffer.concat([buffer, partObj.string]);
                     openCount = partObj.openCount;
 
                     return;
                 }
 
-                buffer = '';
+                buffer = Buffer.from('');
                 openCount = 0;
 
-                let dataObject = {};
                 try {
-                    dataObject = JSON.parse(partObj.string);
+                    let dataObject = JSON.parse(partObj.string.toString());
+                    _self.emit('res:' + dataObject.id, dataObject);
                 } catch (err) {
                     return;
                 }
-
-                _self.emit('res:' + dataObject.id, dataObject);
             });
         });
     }
@@ -81,18 +79,18 @@ class LightningClient extends EventEmitter {
         let lastSplit = 0;
 
         for (let i = startFrom; i < str.length; i++) {
-            if (i > 0 && str.charCodeAt(i - 1) === 115) { // 115 => backslash, ignore this character
+            if (i > 0 && str[i - 1] === 115) { // 115 => backslash, ignore this character
                 continue;
             }
 
-            if (str[i] === '{') {
+            if (str[i] === 123) { // '{'
                 openCount++;
-            } else if (str[i] === '}') {
+            } else if (str[i] === 125) { // '}'
                 openCount--;
 
                 if (openCount === 0) {
                     const start = lastSplit;
-                    const end = i + 1 === str.length ? undefined : i + 1;
+                    const end = (i + 1 === str.length) ? undefined : i + 1;
 
                     parts.push({partial: false, string: str.slice(start, end), openCount: 0});
 
