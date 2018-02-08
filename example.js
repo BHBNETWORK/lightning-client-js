@@ -2,7 +2,8 @@
 
 const LightningClient = require('lightning-client');
 
-// This should point to your lightning-dir, by default in ~/.lightning
+// This should point to your lightning-dir, by default in ~/.lightning.
+// The debug mode is enabled (second parameter) but this decreases performances (see PR #10)
 const client = new LightningClient('/home/bitcoind/.lightning', true);
 
 // Every call returns a Promise
