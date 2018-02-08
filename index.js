@@ -8,7 +8,7 @@ const _ = require('lodash');
 const methods = require('./methods');
 
 class LightningClient extends EventEmitter {
-    constructor(rpcPath) {
+    constructor(rpcPath, debugFlag = false) {
         if (!path.isAbsolute(rpcPath)) {
             throw new Error('The rpcPath must be an absolute path');
         }
@@ -22,6 +22,8 @@ class LightningClient extends EventEmitter {
         this.reconnectWait = 0.5;
         this.reconnectTimeout = null;
         this.reqcount = 0;
+
+        this.debug = debugFlag;
 
         const _self = this;
 
@@ -118,6 +120,12 @@ class LightningClient extends EventEmitter {
             return Promise.reject(new Error('invalid_call'));
         }
 
+        let stackTrace = null;
+        if (this.debug === true) { // not really efficient, we skip this step if debug is not enabled
+            const error = new Error();
+            stackTrace = error.stack;
+        }
+
         const _self = this;
 
         const callInt = ++this.reqcount;
@@ -137,7 +145,7 @@ class LightningClient extends EventEmitter {
                         return;
                     }
 
-                    reject(new Error(JSON.stringify(response.error)));
+                    reject({error: response.error, stack: stackTrace});
                 });
 
                 // Send the command
