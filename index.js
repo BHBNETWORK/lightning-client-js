@@ -49,15 +49,19 @@ class LightningClient extends EventEmitter {
         });
 
         let buffer = '';
+        let openCount = 0;
 
         this.client.on('data', data => {
-            _.each(LightningClient.splitJSON(buffer + data.toString()), partObj => {
+            _.each(LightningClient.splitJSON(buffer + data.toString(), buffer.length, openCount), partObj => {
                 if (partObj.partial) {
                     buffer += partObj.string;
+                    openCount = partObj.openCount;
+
                     return;
                 }
 
                 buffer = '';
+                openCount = 0;
 
                 let dataObject = {};
                 try {
@@ -71,13 +75,12 @@ class LightningClient extends EventEmitter {
         });
     }
 
-    static splitJSON(str) {
+    static splitJSON(str, startFrom = 0, openCount = 0) {
         const parts = [];
 
-        let openCount = 0;
         let lastSplit = 0;
 
-        for (let i = 0; i < str.length; i++) {
+        for (let i = startFrom; i < str.length; i++) {
             if (i > 0 && str.charCodeAt(i - 1) === 115) { // 115 => backslash, ignore this character
                 continue;
             }
@@ -91,7 +94,7 @@ class LightningClient extends EventEmitter {
                     const start = lastSplit;
                     const end = i + 1 === str.length ? undefined : i + 1;
 
-                    parts.push({partial: false, string: str.slice(start, end)});
+                    parts.push({partial: false, string: str.slice(start, end), openCount: 0});
 
                     lastSplit = end;
                 }
@@ -99,7 +102,7 @@ class LightningClient extends EventEmitter {
         }
 
         if (lastSplit !== undefined) {
-            parts.push({partial: true, string: str.slice(lastSplit)});
+            parts.push({partial: true, string: str.slice(lastSplit), openCount});
         }
 
         return parts;
