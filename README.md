@@ -29,9 +29,11 @@ const client = new LightningClient('/home/bitcoind/.lightning');
 
 // "Show information about this node"
 client.getinfo()
-	.then(info => console.log(info));
+	.then(info => console.log(info))
+	.catch(err => console.log(err.message));
 
 // "Create an invoice for {msatoshi} with {label} and {description} with optional {expiry} seconds (default 1 hour)" }
-client.invoice(100, 'my-label-3', 'my-description-3', 3600)
-	.then(result => console.log(result));
+client.invoice(100, 'my-label-4', 'my-description-4', 3600)
+	.then(result => console.log(result))
+	.catch(err => console.log(err.message));
 ```
