@@ -48,11 +48,20 @@ class LightningClient extends EventEmitter {
             });
         });
 
+        let buffer = '';
+
         this.client.on('data', data => {
-            _.each(LightningClient.splitJSON(data.toString()), str => {
+            _.each(LightningClient.splitJSON(buffer + data.toString()), partObj => {
+                if (partObj.partial) {
+                    buffer += partObj.string;
+                    return;
+                }
+
+                buffer = '';
+
                 let dataObject = {};
                 try {
-                    dataObject = JSON.parse(str);
+                    dataObject = JSON.parse(partObj.string);
                 } catch (err) {
                     return;
                 }
@@ -82,14 +91,18 @@ class LightningClient extends EventEmitter {
                     const start = lastSplit;
                     const end = i + 1 === str.length ? undefined : i + 1;
 
-                    parts.push(str.slice(start, end));
+                    parts.push({partial: false, string: str.slice(start, end)});
 
                     lastSplit = end;
                 }
             }
         }
 
-        return parts.length === 0 ? [str] : parts;
+        if (lastSplit !== undefined) {
+            parts.push({partial: true, string: str.slice(lastSplit)});
+        }
+
+        return parts;
     }
 
     increaseWaitTime() {
