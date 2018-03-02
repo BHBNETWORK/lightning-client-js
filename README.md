@@ -37,4 +37,10 @@ client.getinfo()
 client.invoice(100, 'my-label-4', 'my-description-4', 3600)
 	.then(result => console.log(result))
 	.catch(err => console.log(err));
+
+// "Show addresses list up to derivation {index} (default is the last bip32 index)"
+client.devListaddrs ()
+	.then(listaddrs => console.log(JSON.stringify (listaddrs)))
+	.catch(err => console.log(err));
+
 ```

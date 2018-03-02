@@ -32,6 +32,7 @@
   "dev-memleak",
   "withdraw",
   "newaddr",
+  "dev-listaddrs",
   "listfunds",
   "dev-rescan-outputs"
 ]
